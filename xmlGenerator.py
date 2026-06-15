@@ -57,6 +57,8 @@ class UniversalXMLGenerationEngine:
                 self._apply_attributes_from_schema(node, item, item_schema)
                 self._build_doc_tag(node, item)
 
+
+
     def _build_bitmask(self, parent_node, data_dict):
         if "bitmask" in data_dict:
             schema = self._get_shared_schema("bitmask")

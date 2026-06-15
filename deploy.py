@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import yaml
 import json
 import re
-from check import UniversalXMLGenerationEngine
+from xmlGenerator import UniversalXMLGenerationEngine
 
 def merge_nodes(target, source, level=1):
     """

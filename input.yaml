@@ -1,26 +1,23 @@
 action_type: update_logline
 log-line:
-  id: "r"
-  name: "Client Requests To Ghost"
+  id: f
   log_fields:
     standalone_fields:
-      - id: "36"
-        doc: "UPDATED: DCA/EdgeComputing information field for testing purposes."
-        sub_fields:
-          sub_field_items:
-            - id: "2"
-              doc: "MODIFIED: DCA features used hex-encoded bitmask."
-              bitmask:
-                bitfield_items:
-                  - id: "0-3"
-                    doc: "Processor type - UPDATED"
-                    bitval_items:
-                      - id: "1"
-                        doc: "UPDATED ESI processor test"
-                      - id: "2"
-                        doc: "XSLT processor (Modified for test)"
-                      - id: "99"
-                        doc: "Brand new test processor added via YAML"
-                bitflag_items:
-                  - id: "4"
-                    doc: "ESI used by this page or child pages - CHANGED"
+    - id: '50'
+      doc: Advanced streaming metrics
+      bitmask:
+        bitflag_items:
+        - id: '0'
+          doc: Low bandwidth
+        bitfield_items:
+        - id: 1-3
+          doc: Resolution scale
+      sub_fields:
+        sub_field_items:
+        - id: '1'
+          doc: Stream type
+          enums:
+          - id: vod
+            doc: Video on Demand
+          - id: live
+            doc: Live Stream

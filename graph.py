@@ -8,9 +8,6 @@ class EnumItem(BaseModel):
     id: str = Field(description="The ID or value of the enum option.")
     doc: Optional[str] = Field(None, description="The documentation explaining this enum.")
 
-class Enums(BaseModel):
-    enum_items: Optional[List[EnumItem]] = Field(default_factory=list)
-
 # --- SUB-CHARS ---
 class SubCharItem(BaseModel):
     id: str = Field(description="The character ID of the sub-char.")
@@ -77,15 +74,19 @@ class SubFieldItem(BaseModel):
     since: Optional[str] = Field(None, description="The Ghost release version this sub-field was introduced.")
     doc: Optional[str] = Field(None, description="The documentation explaining what this sub-field tracks.")
     
-    enums: Optional[Enums] = None
+    enums: Optional[List[EnumItem]] = Field(default=None)
     bitmask: Optional[Bitmask] = None
     sub_chars: Optional[SubChars] = None
+    parse_info: Optional[ParseInfo] = None
+    status_chars: Optional[StatusChars] = None
     
     # Nested Recursion Target
     sub_fields: Optional['SubFields'] = None 
+    named_sub_fields: Optional['NamedSubFields'] = None
 
 class SubFields(BaseModel):
     splitter: Optional[Splitter] = None
+    parse_info: Optional[ParseInfo] = None
     sub_field_items: Optional[List[SubFieldItem]] = Field(default_factory=list)
 
 # --- NAMED SUB-FIELDS ---
@@ -95,13 +96,18 @@ class NamedFieldItem(BaseModel):
     until: Optional[str] = Field(None, description="The Ghost release version this named field was retired.")
     reporting_level: Optional[str] = Field(None, description="The data reporting level, e.g., 'billing', 'portal', 'debug'.")
     doc: Optional[str] = Field(None, description="The documentation explaining this named field.")
-    
+
+    parse_info: Optional[ParseInfo] = None
+    enums: Optional[List[EnumItem]] = Field(default=None)
+    bitmask: Optional[Bitmask] = None
     sub_fields: Optional[SubFields] = None
     sub_chars: Optional[SubChars] = None
+    status_chars: Optional[StatusChars] = None
 
 class NamedSubFields(BaseModel):
     splitter: Optional[Splitter] = None
     name_value_splitter: Optional[NameValueSplitter] = None
+    parse_info: Optional[ParseInfo] = None
     named_fields: Optional[List[NamedFieldItem]] = Field(default_factory=list)
 
 
@@ -126,7 +132,7 @@ class LogField(BaseModel):
     doc: Optional[str] = Field(None, description="The plain text paragraph explaining what this log field tracks.")
     
     parse_info: Optional[ParseInfo] = None
-    enums: Optional[Enums] = None
+    enums: Optional[List[EnumItem]] = Field(default=None)
     bitmask: Optional[Bitmask] = None
     sub_chars: Optional[SubChars] = None
     status_chars: Optional[StatusChars] = None 
@@ -154,8 +160,12 @@ class LogLineVersionUpdate(BaseModel):
     standalone_fields: Optional[List[LogField]] = Field(default_factory=list)
     log_field_groups: Optional[List[LogFieldGroup]] = Field(default_factory=list)
 
+class LogFieldsPayload(BaseModel):
+    standalone_fields: Optional[List[LogField]] = Field(default_factory=list)
+    log_field_groups: Optional[List[LogFieldGroup]] = Field(default_factory=list)
+
 class LogLineUpdate(BaseModel):
-    id: str = Field(description="The unique single character ID token targeting the master log line layout block, e.g., 'r', 'f', 'W', 'v'.")
+    id: Optional[str] = Field(description="The unique single character ID token targeting the master log line layout block, e.g., 'r', 'f', 'W', 'v'.")
     name: Optional[str] = Field(None, description="The full descriptive name of the log line category, e.g., 'Client Requests'.")
     access_log: Optional[str] = Field(None, description="Log context configuration selector mapping.")
     ddc_log: Optional[str] = Field(None, description="Log context configuration selector mapping.")
@@ -166,14 +176,13 @@ class LogLineUpdate(BaseModel):
     doc: Optional[str] = Field(None, description="Introductory reference explanation summary for the line layout.")
     
     log_line_versions: Optional[List[LogLineVersionUpdate]] = Field(default_factory=list)
-    standalone_fields: Optional[List[LogField]] = Field(default_factory=list)
-    log_field_groups: Optional[List[LogFieldGroup]] = Field(default_factory=list)
+    log_fields: Optional[LogFieldsPayload] = Field(default=None)
 
 class ChangelogEntry(BaseModel):
-    ghost_version: str = Field(description="The release version string associated with this history entry, e.g., '22.5.1'.")
-    date: str = Field(description="The exact calendar date of the commit formatted strictly as YYYY-MM-DD.")
-    author: str = Field(description="The first and last name of the developer publishing the edit pass.")
-    change_summary: str = Field(description="A clean sentence outlining the scope of fields or components added/modified.")
+    ghost_version: Optional[str] = Field(description="The release version string associated with this history entry, e.g., '22.5.1'.")
+    date: Optional[str] = Field(description="The exact calendar date of the commit formatted strictly as YYYY-MM-DD.")
+    author: Optional[str] = Field(description="The first and last name of the developer publishing the edit pass.")
+    change_summary: Optional[str] = Field(description="A clean sentence outlining the scope of fields or components added/modified.")
 
 # --- THE MASTER ROUTER PAYLOAD ---
 class CompilerPayload(BaseModel):
@@ -181,11 +190,14 @@ class CompilerPayload(BaseModel):
         description="The target route trigger selector."
     )
     changelog_payload: Optional[ChangelogEntry] = Field(
-        None, description="Populated ONLY if action_type evaluates exactly to 'append_changelog'."
+        None, description="Populated ONLY if action_type evaluates exactly to 'append_changelog'.",
+        alias="changelog_entry"
     )
     logline_payload: Optional[LogLineUpdate] = Field(
-        None, description="Populated ONLY if action_type evaluates exactly to 'update_logline'."
+        None, description="Populated ONLY if action_type evaluates exactly to 'update_logline'.",
+        alias="log-line"
     )
 
 # Safely resolve nested cross-references in Pydantic v2 execution environments
 SubFieldItem.model_rebuild()
+NamedFieldItem.model_rebuild()

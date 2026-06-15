@@ -1,0 +1,36 @@
+action_type: update_logline
+log-line:
+  id: r
+  log_fields:
+    standalone_fields:
+    - id: '70'
+      named_sub_fields:
+        named_fields:
+        - id: txa
+          since: 22.5.0
+          reporting_level: billing
+          doc: Tracks detailed multi-tiered transaction status anomalies.
+          sub_fields:
+            splitter:
+              pattern: '|'
+            sub_field_items:
+            - id: '1'
+              doc: Attempted action indicators
+              sub_chars:
+                sub_char_items:
+                - id: '0'
+                  doc: none
+                - id: '1'
+                  doc: database-write
+                - id: '2'
+                  doc: token-validation
+            - id: '2'
+              doc: Mitigation strategy status
+              sub_chars:
+                sub_char_items:
+                - id: '?'
+                  doc: unknown status
+                - id: s
+                  doc: success
+                - id: f
+                  doc: failed fallback
