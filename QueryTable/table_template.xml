@@ -1,0 +1,43 @@
+<Table name="{{ table.name }}" publisher="{{ table.publisher }}" owner="{{ table.owner }}">
+  <Columns>
+    {% for col in table.columns %}
+    <Column>
+      <ColumnType>{{ col.type }}</ColumnType>
+      <ColumnDesc>{{ col.description | safe }}</ColumnDesc>
+      <ColumnName>{{ col.name }}</ColumnName>
+    </Column>
+    {% endfor %}
+  </Columns>
+ 
+  <TableDesc>{{ table.table_desc | safe }}</TableDesc>
+
+  {% if table.useful_queries %}
+  <UsefulQueries>
+    {% for query in table.useful_queries %}
+    <Query>
+      <QueryToSend>{{ query.query_to_send }}</QueryToSend>
+      <QueryDesc>{{ query.query_desc }}</QueryDesc>
+      <QueryResult>
+{{ query.query_result }}
+      </QueryResult>
+    </Query>
+    {% endfor %}
+  </UsefulQueries>
+  {% endif %}
+
+  {% if table.see_also %}
+  <SeeAlso>
+    {% for item in table.see_also %}
+    {{ item }}
+    {% endfor %}
+  </SeeAlso>
+  {% endif %}
+  
+  {% if table.providers %}
+  <Providers>
+    {% for provider in table.providers %}
+    <Provider>{{ provider }}</Provider>
+    {% endfor %}
+  </Providers>
+  {% endif %}
+</Table>

@@ -1,5 +1,6 @@
 venv/
 agent_workspaces/
+QueryTable/__pycache__/
 log-format-updated.xml
 log-format.dtd
 log-format.xsl
