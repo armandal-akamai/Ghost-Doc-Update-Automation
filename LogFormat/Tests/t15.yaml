@@ -1,0 +1,19 @@
+action_type: update_logline
+log-line:
+  id: "r"
+  log_fields:
+    standalone_fields:
+      - id: "36"
+        sub_fields:
+          sub_field_items:
+            - id: "1"
+              sub_fields:
+                sub_field_items:
+                  - id: "1"
+                    enums:
+                      # 1. Target a deep legacy enum option (Matches line ~450 in the XML)
+                      - id: "t"
+                        doc: "UPDATED DEEP ENUM: EJ-Tomcat processing engine validation pass verification."
+                      # 2. Append a brand new enum selection block into the same collection
+                      - id: "g"
+                        doc: "NEW DEEP ENUM: Brand new edge container runtime routing selection."

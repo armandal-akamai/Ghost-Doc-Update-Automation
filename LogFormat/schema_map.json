@@ -1,0 +1,216 @@
+{
+  "documentation_blueprint": {
+    "changelog_route": {
+      "yaml_trigger": "append_changelog",
+      "target_xpath": "/log-format/changelog",
+      "xml_element": "change",
+      "attributes": {
+        "ghost_version": { "xml_type": "attribute", "xml_name": "ghost", "data_type": "string" },
+        "date": { "xml_type": "attribute", "xml_name": "date", "data_type": "string" },
+        "author": { "xml_type": "attribute", "xml_name": "author", "data_type": "string" }
+      }
+    },
+    "logline_route": {
+      "yaml_trigger": "update_logline",
+      "target_xpath": "/log-format/log-line",
+      "xml_element": "log-line",
+      "attributes": {
+        "id": { "xml_name": "id", "data_type": "string" },
+        "name": { "xml_name": "name", "data_type": "string" },
+        "access_log": { "xml_name": "access-log", "data_type": "string" },
+        "ddc_log": { "xml_name": "ddc-log", "data_type": "string" },
+        "activity_log": { "xml_name": "activity-log", "data_type": "string" },
+        "check_continuity": { "xml_name": "check-continuity", "data_type": "string" },
+        "since": { "xml_name": "since", "data_type": "string" },
+        "until": { "xml_name": "until", "data_type": "string" }
+      },
+      "child_sections": {
+        "doc": { "xml_element": "doc", "data_type": "string" },
+        "log_line_version": {
+          "xml_element": "log-line-version",
+          "attributes": {
+            "id": { "xml_name": "id", "data_type": "string" },
+            "since": { "xml_name": "since", "data_type": "string" },
+            "until": { "xml_name": "until", "data_type": "string" },
+            "access_log": { "xml_name": "access-log", "data_type": "string" },
+            "ddc_log": { "xml_name": "ddc-log", "data_type": "string" },
+            "activity_log": { "xml_name": "activity-log", "data_type": "string" }
+          }
+        }
+      }
+    },
+    "fields_routing": {
+      "log_field_groups": {
+        "target_xpath": "/log-format/log-line/log-field-group",
+        "xml_element": "log-field-group",
+        "attributes": {
+          "since": { "xml_name": "since", "data_type": "string" },
+          "until": { "xml_name": "until", "data_type": "string" }
+        },
+        "child_sections": {
+          "doc": { "xml_element": "doc", "data_type": "string" }
+        }
+      },
+      "standalone_fields": {
+        "target_xpath": "/log-format/log-line/log-field",
+        "xml_element": "log-field",
+        "attributes": {
+          "id": { "xml_name": "id", "data_type": "string" },
+          "since": { "xml_name": "since", "data_type": "string" },
+          "until": { "xml_name": "until", "data_type": "string" },
+          "status_id": { "xml_name": "status-id", "data_type": "string" },
+          "contains_streaming_flag": { "xml_name": "contains-streaming-flag", "data_type": "string" },
+          "include_fields": { "xml_name": "include-fields", "data_type": "integer" },
+          "non_configurable": { "xml_name": "non-configurable", "data_type": "boolean" }
+        },
+        "child_sections": {
+          "doc": { "xml_element": "doc", "data_type": "string" }
+        }
+      }
+    },
+    "advanced_substructures": {
+      "parse_info": {
+        "xml_element": "parse-info",
+        "attributes": {
+          "type": { "xml_name": "type", "data_type": "string" },
+          "skipsub": { "xml_name": "skipsub", "data_type": "integer" },
+          "repeat": { "xml_name": "repeat", "data_type": "integer" },
+          "erase": { "xml_name": "erase", "data_type": "string" },
+          "chars_as_enum": { "xml_name": "chars-as-enum", "data_type": "integer" },
+          "joiner": { "xml_name": "joiner", "data_type": "string" }
+        }
+      },
+      "status_chars": {
+        "xml_element": "status-chars",
+        "attributes": {
+          "repeat_alphabetized": { "xml_name": "repeat-alphabetized", "data_type": "string" }
+        },
+        "child_sections": {
+          "status_char_groups": {
+            "xml_element": "status-char-group",
+            "attributes": {
+              "since": { "xml_name": "since", "data_type": "string" },
+              "until": { "xml_name": "until", "data_type": "string" }
+            },
+            "child_sections": {
+              "doc": { "xml_element": "doc", "data_type": "string" },
+              "status_char_items": {
+                "xml_element": "status-char",
+                "attributes": {
+                  "id": { "xml_name": "id", "data_type": "string" },
+                  "duplicate": { "xml_name": "duplicate", "data_type": "string" },
+                  "since": { "xml_name": "since", "data_type": "string" },
+                  "until": { "xml_name": "until", "data_type": "string" },
+                  "streaming_related": { "xml_name": "streaming-related", "data_type": "string" }
+                },
+                "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+              }
+            }
+          },
+          "status_char_items": {
+            "xml_element": "status-char",
+            "attributes": {
+              "id": { "xml_name": "id", "data_type": "string" }
+            },
+            "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+          }
+        }
+      },
+      "named_sub_fields": {
+        "xml_element": "named-sub-fields",
+        "child_sections": {
+          "splitter": { 
+            "xml_element": "splitter", 
+            "attributes": { 
+              "pattern": { "xml_name": "pattern" }, 
+              "regex": { "xml_name": "regex" },
+              "size": { "xml_name": "size", "data_type": "integer" }
+            } 
+          },
+          "name_value_splitter": { 
+            "xml_element": "name-value-splitter", 
+            "attributes": { 
+              "pattern": { "xml_name": "pattern" }, 
+              "regex": { "xml_name": "regex" } 
+            } 
+          },
+          "named_fields": {
+            "xml_element": "named-field",
+            "attributes": { 
+              "id": { "xml_name": "id" }, 
+              "since": { "xml_name": "since" }, 
+              "until": { "xml_name": "until" },
+              "reporting_level": { "xml_name": "reporting-level", "data_type": "string" } 
+            },
+            "child_sections": { "doc": { "xml_element": "doc" } }
+          }
+        }
+      },
+      "sub_fields": {
+        "xml_element": "sub-fields",
+        "child_sections": {
+          "splitter": { 
+            "xml_element": "splitter", 
+            "attributes": { 
+              "pattern": { "xml_name": "pattern" },
+              "max_splits": { "xml_name": "max-splits" },
+              "regex": { "xml_name": "regex" } 
+            } 
+          },
+          "sub_field_items": {
+            "xml_element": "sub-field",
+            "attributes": { 
+              "id": { "xml_name": "id", "data_type": "string" },
+              "since": { "xml_name": "since", "data_type": "string" }
+            },
+            "child_sections": {
+              "doc": { "xml_element": "doc", "data_type": "string" },
+              "enums": {
+                "xml_element": "enums",
+                "child_sections": {
+                  "enum_items": {
+                    "xml_element": "enum",
+                    "attributes": { "id": { "xml_name": "id" } },
+                    "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+                  }
+                }
+              },
+              "bitmask": {
+                "xml_element": "bitmask",
+                "child_sections": {
+                  "bitflag_items": {
+                    "xml_element": "bitflag",
+                    "attributes": { "id": { "xml_name": "id", "data_type": "string" } },
+                    "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+                  },
+                  "bitfield_items": {
+                    "xml_element": "bitfield",
+                    "attributes": { "id": { "xml_name": "id", "data_type": "string" } },
+                    "child_sections": { 
+                      "doc": { "xml_element": "doc", "data_type": "string" },
+                      "bitval_items": {
+                        "xml_element": "bitval",
+                        "attributes": { "id": { "xml_name": "id", "data_type": "string" } },
+                        "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+                      }
+                    }
+                  }
+                }
+              },
+              "sub_chars": {
+                "xml_element": "sub-chars",
+                "child_sections": {
+                  "sub_char_items": {
+                    "xml_element": "sub-char",
+                    "attributes": { "id": { "xml_name": "id", "data_type": "string" } },
+                    "child_sections": { "doc": { "xml_element": "doc", "data_type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

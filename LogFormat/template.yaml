@@ -1,0 +1,100 @@
+---
+# Instructions: Choose your action_type, populate the required fields, and 
+# delete any unused structural options to keep the ticket clean.
+
+# Choose one: "append_changelog" OR "update_logline"
+action_type: "update_logline"
+# Section 1: Historical timeline changes (Used for append_changelog)
+ 
+changelog:
+  ghost_version: "5.0.x"       # Maps to the target release version attribute
+  change_summary: "A brief summary of the documentation changes being committed."
+
+# Section 2: Top level log-line record (Use for update_logline)
+ 
+log-line:
+  id: "v"                       # Target log line identifier (e.g., v, r, w)
+  name: "Version Log"           # Descriptive title of the log line profile
+  access_log: "yes"             # Boolean flag: "yes" or "no"
+  ddc_log: "no"                 # Boolean flag: "yes" or "no"
+  check_continuity: "yes"       # Boolean flag: "yes" or "no"
+  doc: "High-level text passage describing what this record type tracks."
+  log_line_version: "Current version metadata (Applicable only to 'v' and 'w' fields)."
+
+# Section 3: addding log-fields to the log-line (Standalone vs. Grouped Versions)
+log_fields:
+
+  # Option A: For log fields not withing a log-group (Not bound to a version block wrapper)
+  standalone_fields:
+    - id: 1                     # Unique identifier for this specific field
+      since: "4.1.x"            # Version tracking origin marker
+      status_id: "auth_status"  # Attribute identifier for status trackers
+      contains_streaming_flag: "False" # Flag configuration: "True" or "False"
+      include_fields: 3
+      non_configurable: true    # Configuration override flag (true/false)
+      doc: "Clear descriptive passage explaining the standalone field's purpose."
+
+      # [Nested Advanced Options can be pasted here if required for standalone fields]
+
+  # Option B: Grouped log fields (Wrapped together under a release version)
+  grouped_fields:
+    - since: "4.4.x"            # The single version grouping all fields below
+      fields:
+        - id: 2
+          since: "4.4.x"
+          doc: "First log field bundled inside this release version group."
+        - id: 3
+          since: "4.4.x"
+          doc: "Second log field bundled inside this release version group."
+
+          # Advanced Structural Options (Include inside a field only if needed)
+          # Can be include in both standalone log fields and fields inside a group
+
+          # Option B1: Status Characters Layout Configuration
+          status_chars:
+            repeat_alphabetized: "yes" # Formatting rule attribute
+            status_char_groups:
+              - since: "4.1.x"
+                until: "4.4.x"
+                doc: "High-level overview documentation for this character group."
+                status_char_items:
+                  - id: "A"
+                    duplicate: "no"    # Duplicate flag value ("yes" or "no")
+                    since: "4.1.x"
+                    until: "4.4.x"
+                    doc: "Target definition string for status character code A."
+
+          # Option B2: Breakdown into Named Sub-Fields
+          named_sub_fields:
+            splitter:
+              pattern: "|"            # Value extraction delimiter literal
+              regex: "no"             # Process pattern as regular expression? ("yes"/"no")
+            name_value_splitter:
+              pattern: "="            # Delimiter mapping parameter keys to values
+              regex: "no"             # Process pattern as regular expression? ("yes"/"no")
+            named_fields:
+              - id: "sub_field_A"
+                since: "4.4.x"
+                reporting_level: 2    # Tracking telemetry level
+                doc: "Descriptive pass outlining the role of named subfield A."
+
+          # Option B3: Breakdown into Standard Sub-Fields
+          sub_fields:
+            splitter:
+              pattern: ","            # Delimiter character breaking down the field value
+            sub_field_items:
+              - id: 5
+                doc: "Descriptive pass outlining standard sub-field item 5."
+
+                # Nested Option B3a: Enums / Constant Allowed Values Lists
+                enums:
+                  - id: "I"
+                    doc: "Streaming IF to Iphone. Content is not live"
+                  - id: "IL"
+                    doc: "Alternative streaming identifier variant description."
+
+                # Nested Option B3b: Bitmasks and Hex Bitflags
+                bitmask:
+                  - id: 0             # Target encoded bit alignment position
+                    doc: "Malformed Provider tag configuration error state."
+---

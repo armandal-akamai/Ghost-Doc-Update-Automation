@@ -1,0 +1,26 @@
+action_type: "update_logline"
+log-line:
+  id: "interface-monitor"
+  name: "Hardware Interface State Transitions"
+  access_log: "no"
+  doc: "Tracks localized hardware controller and telemetry port status shifts over physical links."
+
+  log_fields:
+    standalone_fields:
+      - id: "45" # String coerced
+        since: "3.2.x"
+        doc: "Interface error state summary token allocation."
+        status_chars:
+          status_char_groups:
+            - since: "3.2.x" # Valid schema timeline marker instead of id
+              doc: "Group profile focusing on bare-metal physical connection breaks."
+              status_char_items:
+                - id: "D"
+                  doc: "<p>Ethernet physical layer drop. Verified cable disconnection or controller power failure.</p>"
+                - id: "W"
+                  doc: "<p>Wireless radio decay event. Signal baseline dropped unexpectedly below minimum decibel limits.</p>"
+            - since: "3.5" # Valid schema timeline marker instead of id
+              doc: "Group profile mapping virtual link and network address layout anomalies."
+              status_char_items:
+                - id: "T"
+                  doc: "Timeout penalty bound hit while processing internal core system DNS table lookup."

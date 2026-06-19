@@ -1,0 +1,21 @@
+action_type: update_logline
+log-line:
+  id: "r"
+  log_fields:
+    standalone_fields:
+      - id: "36"
+        sub_fields:
+          sub_field_items:
+            - id: "1"
+              sub_fields:
+                sub_field_items:
+                  - id: "2"
+                    bitmask:
+                      bitflag_items:
+                        # 1. Update a deep legacy bitflag in place (Matches line ~480 in the XML)
+                        - id: "4"
+                          doc: "UPDATED BITFLAG TEST: Heavy ESI engine structural validation tracking pass."
+                        
+                        # 2. Inject a brand new bitflag to verify array expansion stability
+                        - id: "99"
+                          doc: "NEW BITFLAG TEST: Edge computing worker thread limit breach tracking."

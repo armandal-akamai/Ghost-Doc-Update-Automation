@@ -1,0 +1,15 @@
+action_type: update_logline
+log-line:
+  id: "r"
+  log_fields:
+    standalone_fields:
+      - id: "15"
+        status_chars:
+          status_char_items:
+            # 1. Target a nested element hidden inside an existing group (<status-char-group since="3.5">)
+            - id: "A"
+              doc: "UPDATED GROUP TUNNEL TEST: Verified asynchronous refresh tracking flag status."
+            
+            # 2. Add a brand new loose element to confirm the fallback append handler works
+            - id: "9"
+              doc: "NEW LOOSE CHAR TEST: Verifying global room allocation parameters."

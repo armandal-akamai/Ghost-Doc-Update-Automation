@@ -1,0 +1,24 @@
+action_type: "update_logline"
+log-line:
+  id: "standard-auth"
+  name: "User Authentication Gateway Log"
+  access_log: "yes"
+  ddc_log: "no"
+  check_continuity: "yes"
+  doc: |
+    <p>This log track focuses exclusively on entry-point user authentication requests flowing through the primary public API edge proxy.</p>
+    <ul>
+      <li>Triggers on password, hardware key, and refresh token-based validation sweeps.</li>
+      <li>Security level requirements dictate a strict 90-day isolation storage tier limit.</li>
+    </ul>
+  # Nest directly inside parent line context using exact engine contract keys
+  log_fields:
+    standalone_fields:
+      - id: "1"
+        since: "1.0.x"
+        doc: "Unique string transaction GUID mapping the lifetime of the connection sequence."
+      - id: "2"
+        since: "1.0.x"
+        doc: |
+          <p>The explicit client source internet protocol address mapping the remote initiator context endpoint layer.</p>
+          <ul><li>Natively supports string schemas for both IPv4 and IPv6 routing allocations.</li></ul>

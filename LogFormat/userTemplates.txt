@@ -1,0 +1,109 @@
+### 1. Append Changelog (Action)
+```text
+ACTION: append_changelog
+GHOST_VERSION: [e.g., 26.1.0]
+DATE: [YYYY-MM-DD]
+AUTHOR: [First Last]
+SUMMARY: [Single sentence summarizing what changed overall]
+```
+### 2. Standard Update (Action + Base Line)
+```text
+ACTION: update_logline
+TARGET_ID: [e.g., r, f, W]
+NAME: [Descriptive Log Line Name]
+ACCESS_LOG: [yes/no]
+DDC_LOG: [yes/no]
+ACTIVITY_LOG: [yes/no]
+DOC: [Root documentation paragraph. HTML markup allowed here]
+
+STANDALONE_FIELDS:
+  - ID: "[Field ID]"
+    SINCE: "[Version]"
+    DOC: "[Field description]"
+```
+### 3. Versioning Included 
+```text
+ACTION: update_logline
+TARGET_ID: [e.g., r, f, W]
+NAME: [Descriptive Log Line Name]
+ACCESS_LOG: [yes/no]
+DDC_LOG: [yes/no]
+DOC: [Root documentation paragraph]
+
+LOG_LINE_VERSIONS:
+  - ID: "[Version ID, e.g., '1']"
+    SINCE: "[Version]"
+    ACCESS_LOG: "[yes/no]"
+    DDC_LOG: "[yes/no]"
+    DOC: "[Documentation for this specific version]"
+    STANDALONE_FIELDS:
+      - ID: "[Field ID]"
+        SINCE: "[Version]"
+        DOC: "[Field description]"
+```
+### 4. Sub-Fields
+```text
+SUB_FIELDS:
+  SPLITTER: ","
+  ITEMS:
+    - ID: "1"
+      DOC: "[Sub-field item 1 description]"
+    - ID: "2"
+      DOC: "[Sub-field item 2 description]"
+```
+### 5.  Enums
+```text
+ENUMS:
+  - ID: "[enum_value_1]" -> DOC: "[Description or HTML]"
+  - ID: "[enum_value_2]" -> DOC: "[Description or HTML]"
+```
+### 6. Bitmasks
+```text
+BITMASK:
+  BITFLAGS:
+    - ID: "[bitflag_id]" -> DOC: "[Description]"
+  BITFIELDS:
+    - ID: "[e.g., 0-3]" -> DOC: "[Bitfield range description]"
+      BITVALS:
+        - ID: "[val_id]" -> DOC: "[Value description]"
+```
+### 7. Status Chars
+```text
+STATUS_CHARS:
+  REPEAT_ALPHABETIZED: "no" # or "yes"
+  STATUS_CHAR_GROUPS:
+    - SINCE: "[Version]"
+      DOC: "[Description of group]"
+      STATUS_CHAR_ITEMS:
+        - ID: "[Char ID]"
+          DOC: "[Description of this character]"
+  STATUS_CHAR_ITEMS:
+    - ID: "[Char ID]"
+      DOC: "[Description of loose character]"
+```
+### 8. Named Sub Fields
+```text
+NAMED_SUB_FIELDS:
+  SPLITTER: "&"
+  NAME_VALUE_SPLITTER: "="
+  FIELDS:
+    - ID: "[string_id, e.g., wco]"
+      DOC: "[Description]"
+```
+### 9. LogField Groups 
+```text
+LOG_FIELD_GROUPS:
+  - SINCE: "[Version]"
+    DOC: "[Group context summary]"
+    LOG_FIELDS:
+      - ID: "[Field ID]"
+        SINCE: "[Version]"
+        DOC: "[Field description]"
+```
+### 10. Sub Chars
+```text
+SUB_CHARS:
+  SUB_CHAR_ITEMS:
+    - ID: "[Char ID]"
+      DOC: "[Description of this sub-character]"
+```

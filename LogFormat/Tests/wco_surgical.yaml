@@ -1,0 +1,21 @@
+action_type: update_logline
+log-line:
+  id: "r"
+  log_fields:
+    standalone_fields:
+      - id: "70"
+        named_sub_fields:
+          named_fields:
+            - id: "wco"
+              sub_fields:
+                sub_field_items:
+                  - id: "1"
+                    sub_chars:
+                      sub_char_items:
+                        # 1. Update the description of an existing sub-char (js-minify)
+                        - id: "1"
+                          doc: "UPDATED NESTED DOC TEST: JavaScript minification structural verification pass."
+                        
+                        # 2. Inject a brand-new sub-char right into the legacy dictionary
+                        - id: "z"
+                          doc: "NEW NESTED CHAR TEST: Brand new custom transformation token."

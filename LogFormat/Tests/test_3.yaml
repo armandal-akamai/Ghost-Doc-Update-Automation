@@ -1,0 +1,27 @@
+action_type: "update_logline"
+log-line:
+  id: "compound-payload"
+  name: "Serialized Request Header Token Breakdown"
+  access_log: "yes"
+  doc: "Deconstructs incoming packed transaction envelopes into independent, parsed analytical contexts."
+
+  log_fields:
+    standalone_fields:
+      - id: "102"
+        since: "5.1.0"
+        doc: "Comma-delimited compound state line mapped out from security contexts."
+        sub_fields:
+          splitter:
+            pattern: ","
+          sub_field_items:
+            - id: "1"
+              doc: "Target positional element mapping subscription registration parameters."
+              enums:
+                - id: "premium"
+                  doc: |
+                    <p>Enterprise subscription Tier:</p>
+                    <ul><li>Uncapped concurrency limits and advanced threat protection matrix routing active.</li></ul>
+                - id: "standard"
+                  doc: "Baseline community tier allocation bounding global maximum thread throughput metrics."
+            - id: "2"
+              doc: "Secondary positional element reflecting the numeric server geographic region datacenter assignment."
