@@ -5,4 +5,5 @@ LogFormat/__pycache__/
 log-format-updated.xml
 log-format.dtd
 log-format.xsl
-**/.env
+QueryTable/.env
+LogFormat/.env
