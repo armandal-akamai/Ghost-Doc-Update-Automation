@@ -26,13 +26,13 @@ This project uses Sphinx to generate HTML documentation directly from the Python
    ```bash
    pip install sphinx sphinx_rtd_theme
    ```
-2. **Build the HTML Site** 
+2. **Build the HTML Site:** 
    Navigate into the docs folder and trigger the build process.
    ```bash
    cd QueryTable/docs
    make html
    ```
-3. **Open the Website**
+3. **Open the Website:**
    This site will be generated inside your local docs/build/html/ directory. Open the index.html file in your browser.
    ```bash
    open QueryTable/docs/build/html/index.html

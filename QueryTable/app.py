@@ -10,9 +10,11 @@ review and edit the AI-generated XML in a live code editor, and manually
 approve the finalized payload to resume the graph's validation and save nodes.
 
 """
+import os
 import gradio as gr
 from QueryTable.main import app as langgraph_app
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
 # --- EVENT HANDLERS ---
 
 def start_extraction(ticket_id: str, ticket_text: str):
@@ -82,7 +84,7 @@ def approve_and_save(ticket_id: str, edited_xml: str):
     
     try:
         # 2. INJECT EDITS: Update state and trick LangGraph
-        langgraph_app.update_state(config, {"xml_string": edited_xml}, as_node="render_xml")
+        langgraph_app.update_state(config, {"xml_string": edited_xml, "error": None})
         
         # 3. RESUME GRAPH: Runs validate_xml -> save_xml
         for _ in langgraph_app.stream(None, config):
@@ -101,8 +103,7 @@ def approve_and_save(ticket_id: str, edited_xml: str):
             )
         else:
             # Success!
-            filename = final_state.values.get("xml_filename")
-            success_msg = f"✅ Success! XML passed validation and was saved to disk as: **{filename}**"
+            success_msg = f"✅ Success! XML passed validation and was saved to disk"
             yield (
                 gr.update(value="Status: 🟢 Saved Successfully"),
                 gr.update(visible=False),  
@@ -140,7 +141,19 @@ with gr.Blocks() as ui:
             lines=20
         )
         approve_btn = gr.Button("✅ Approve, Validate & Save", variant="stop")
-        
+
+    gr.Markdown("---")
+
+    # --- DEVELOPER TEMPLATES ACCORDION ---
+    with open(os.path.join(BASE_DIR, "userTemplates.txt"), "r") as f:
+        user_templates_content = f.read()
+
+    with gr.Column(visible=True):
+        with gr.Accordion("📋 Developer Quick Templates (Expand to copy snippets)", open=False):
+            gr.Markdown(user_templates_content)
+            
+    gr.Markdown("---")
+
     # 3. STATE B: LOGS & ERRORS (Hidden by default)
     with gr.Column(visible=False) as log_col:
         output_log = gr.Markdown(label="System Output")
@@ -160,6 +173,3 @@ with gr.Blocks() as ui:
         inputs=[ticket_input, xml_editor],
         outputs=[status_indicator, review_col, log_col, output_log]
     )
-
-if __name__ == "__main__":
-    ui.launch(server_port=7860)

@@ -1,0 +1,24 @@
+### Comprehensive MDR Table (With Metadata & Queries)
+```text
+NAME: [e.g., cache_efficiency]
+PUBLISHER: [e.g., Core Platform Engineering]
+OWNER: [e.g., Jane Doe]
+DESCRIPTION: [e.g., Tracks cache hit rates and bypass reasons across all edge groups.]
+NOTES: [e.g., Supported platforms include ESSL and FreeFlow.]
+
+USEFUL_QUERIES:
+  - QUERY: "[e.g., SELECT hit_rate FROM cache_efficiency WHERE hit_rate < 90]"
+    DESCRIPTION: "[e.g., Find low cache hit rates]"
+  - QUERY: "[e.g., SELECT bypass_reason, COUNT(*) FROM cache_efficiency GROUP BY bypass_reason]"
+    DESCRIPTION: "[e.g., Aggregate bypass reasons]"
+
+COLUMNS:
+  - NAME: [e.g., cache_group_id]
+    TYPE: [e.g., int]
+    DOC: [e.g., Unique identifier for the edge group]
+  - NAME: [e.g., hit_rate]
+    TYPE: [e.g., float]
+    DOC: [e.g., Percentage of requests hit]
+  - NAME: [e.g., bypass_reason]
+    TYPE: [e.g., string]
+    DOC: [e.g., Why a request skipped cache, if applicable]

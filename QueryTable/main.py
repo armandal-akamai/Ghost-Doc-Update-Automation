@@ -60,7 +60,7 @@ structured_llm = base_llm.with_structured_output(MDRQueryTable)
 # 3. Define the Graph Nodes (The Steps)
 def extract_jira_node(state: GraphState) -> dict:
     """Node 1: Sends the raw text to the LLM and extracts structured data."""
-    print("[Node: Extract] AI Agent is processing Jira ticket text via OpenRouter...")
+    print("[Node: Extract] AI Agent is processing Jira ticket ...")
     with open(os.path.join(BASE_DIR, "systemPrompt.txt"), "r") as f:
         system_prompt = f.read()
     try:
@@ -155,6 +155,16 @@ def validate_xml_node(state: GraphState) -> dict:
         print(f"{error_msg}")
         return {"error": error_msg}
 
+def route_after_validation(state: GraphState) -> str:
+    """Checks if validation passed. If it failed, loop back for human review."""
+    if state.get("error"):
+        # Loop back, Because interrupt_before=["validate_xml"] is set, 
+        # the graph will immediately pause again so the user can fix it.
+        return "validate_xml" 
+    
+    # If no error, proceed to save
+    return "save_xml"
+
 # 4. Build and Compile the Graph Workflow
 workflow = StateGraph(GraphState)
 
@@ -168,79 +178,16 @@ workflow.add_node("validate_xml", validate_xml_node)
 workflow.add_edge(START, "extract_jira")
 workflow.add_edge("extract_jira", "render_xml")
 workflow.add_edge("render_xml", "validate_xml")
-workflow.add_edge("validate_xml", "save_xml")
+workflow.add_conditional_edges(
+    "validate_xml",             # The node we are coming from
+    route_after_validation,     # The routing logic
+    {
+        "validate_xml": "validate_xml", # If router says 'validate_xml', loop back
+        "save_xml": "save_xml"          # If router says 'save_xml', move forward
+    }
+)
 workflow.add_edge("save_xml", END)
 
 # Compile into an executable application
 memory = MemorySaver()
 app = workflow.compile(checkpointer=memory, interrupt_before=["validate_xml"])
-
-# 5. Execute the graph
-if __name__ == "__main__":
-    # Sample developer note simulating closed ticket contents
-    ticket_payload = """
-    Please generate a new MDR Query Table with the following details:
-
-    Name: cache_efficiency
-
-    Publisher: Core Platform Engineering
-
-    Owner: Jane Doe
-
-    Table Description: Tracks cache hit rates and bypass reasons across all edge groups.
-
-    Notes: Supported platforms include ESSL and FreeFlow.
-
-    Useful Queries: 
-    1. Query: "SELECT hit_rate FROM cache_efficiency WHERE hit_rate < 90" | Description: "Find low cache hit rates"
-    2. Query: "SELECT bypass_reason, COUNT(*) FROM cache_efficiency GROUP BY bypass_reason" | Description: "Aggregate bypass reasons"
-
-    Columns:
-    Name: cache_group_id | Type: int | Description: Unique identifier for the edge group
-    Name: hit_rate | Type: float | Description: Percentage of requests hit
-    Name: bypass_reason | Type: string | Description: Why a request skipped cache, if applicable
-    """
-   
-    # Set a unique thread ID for this specific run so LangGraph can track memory
-    config = {"configurable": {"thread_id": "jira-ticket-test-001"}}
-
-    # 1. Start the graph (It will run Extract -> Render, then PAUSE before Validate)
-    initial_inputs = {"jira_ticket_text": ticket_payload}
-    for event in app.stream(initial_inputs, config):
-        pass # Stream output omitted for brevity
-        
-    print("\nGRAPH PAUSED: Ready for Human Review.")
-    
-    # 2. Get the current state to show the human
-    current_state = app.get_state(config)
-    staged_xml = current_state.values.get("xml_string")
-    
-    if not current_state.values.get("error"):
-        print("\n--- STAGED XML ---")
-        print(staged_xml)
-        print("------------------\n")
-        
-        # --- HUMAN INTERVENTION HAPPENS HERE ---
-        print("[Human] Making final edits and approving...")
-        # Simulate an edit (e.g., human fixes a description)
-        edited_xml = staged_xml 
-        
-        # 3. Inject the edited XML back into the state
-        # Using as_node="render_xml" tricks LangGraph into thinking the render node 
-        # just finished, so it knows to step into validate_xml next.
-        app.update_state(config, {"xml_string": edited_xml}, as_node="render_xml")
-        
-        # 4. Resume the graph (It will run Validate -> Save)
-        print("\nRESUMING GRAPH: Validating and saving...")
-        for event in app.stream(None, config):
-            pass
-            
-        # 5. Check the final outcome
-        final_state = app.get_state(config)
-        if final_state.values.get("error"):
-            # If the human introduced a broken XML tag, the validate node catches it here!
-            print(f"\nExecution stopped! The edited XML failed validation:\n{final_state.values.get('error')}")
-        else:
-            print(f"\nSuccess! Final XML Output File Generated: {final_state.values.get('xml_filename')}")
-    else:
-        print(f"\nExecution stopped due to earlier error: {current_state.values.get('error')}")
