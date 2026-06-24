@@ -1,20 +1,21 @@
 """
 This module defines, compiles, and executes a stateful LangGraph automation 
 pipeline. It parses raw database schema definitions from developer Jira tickets, 
-transforms them into structured Pydantic objects, renders them into Akamai MDR XML 
-tables using Jinja2, runs validation diagnostics, and orchestrates a 
-human-in-the-loop authorization checkpoint.
+transforms them into structured Pydantic objects, and utilizes Perforce to dynamically 
+build or merge Akamai MDR XML tables. It runs validation diagnostics and orchestrates a 
+human-in-the-loop authorization checkpoint before deploying changes to the server.
 
-Workflow node Architecture: 
-    1. Extract(`extract_jira_node`) : This node passes the the text entered by the user to an LLM which produces a structured MDRQueryTable Pydantic model.
-    2. Render(`render_xml_node`) : This takes the Pydantic data and converts it into the xml using the Jinja2 template and stores it in memory.
-    3. Validate(`validate_xml_node`): This nodes validate the in-memory XML using xmllint binary.
-    4. Save(`save_xml_node`): Writes the finalized, approved XML payload into an isolated sandbox subdirectory inside `agent_workspaces/` tracked by `thread_id`.
+Workflow Node Architecture: 
+    1. Extract (`extract_jira_node`): Passes the text entered by the user to an LLM, which produces a structured MDRQueryTable Pydantic model.
+    2. Build (`perforce_builder_node`): Queries Perforce to determine table existence. If the table is new, it renders a fresh XML using a Jinja2 template. If it exists, it safely deep-merges the new columns/queries into the existing file.
+    3. Validate (`validate_xml_node`): Validates the in-memory XML string using the xmllint binary.
+    4. Deploy (`perforce_deploy_node`): Uses a FileLock to safely write the finalized, human-approved XML to the local workspace and automatically submits it to the Perforce depot.
 
 State Management & Human Intervention:
     The application utilizes an in-memory `MemorySaver` checkpointer. The graph 
     is compiled with a hard pause flag: `interrupt_before=["validate_xml"]`. 
-    This suspends execution right after the XML is rendered so that it can be edited by the user before it passes through the validation block.
+    This suspends execution right after the XML is built (but before validation) 
+    so that the final payload can be reviewed and manually edited by the user in the UI.
 """
 
 import os
@@ -31,6 +32,11 @@ from langgraph.checkpoint.memory import MemorySaver
 # Import the Pydantic schema we built earlier
 from QueryTable.pyd import MDRQueryTable 
 import dotenv
+
+from P4 import P4, P4Exception
+from filelock import FileLock
+from QueryTable.xmlMerger import merge_query_table_update
+
 #TODO-> last_updated, etc. -> Read the doc above the ghost_h3_server.xml file.
 # 1. Define the Graph State
 
@@ -46,6 +52,7 @@ class GraphState(TypedDict):
     xml_string: Optional[str]
     xml_filename: Optional[str]
     error: Optional[str]
+    p4_action: Optional[str]
 
 # 2. Initialize your OpenRouter LLM with Structured Output
 base_llm = init_chat_model(
@@ -77,49 +84,93 @@ def extract_jira_node(state: GraphState) -> dict:
         print(f"Extraction error: {e}")
         return {"error": str(e)}
 
-def render_xml_node(state: GraphState) -> dict:
-    """Node 2: Takes the Pydantic data and renders the XML string in memory."""
-    if state.get("error"):
-        return state
-
+def perforce_builder_node(state: GraphState) -> dict:
+    if state.get("error"): return state
+    
     table_data = state["table_data"]
-    print(f"[Node: Render] Rendering XML in memory for review...")
+    table_name = table_data.name
+    depot_path = f"//sandbox/armandal/QueryTable/{table_name}.xml"
+    # Match the local path to your workspace view!
+    local_path = os.path.join(ROOT_DIR, "QueryTable", "tempFolder", f"{table_name}.xml")
     
-    # autoescape handles the XML escaping safely and automatically
-    env = Environment(
-        loader=FileSystemLoader(BASE_DIR), 
-        trim_blocks=True, 
-        lstrip_blocks=True,
-        autoescape=select_autoescape(['xml']) 
-    )
-    template = env.get_template('table_template.xml')
-    final_xml = template.render(table=table_data)
+    p4 = P4()
+    p4.port = os.getenv("P4PORT")
+    p4.user = os.getenv("P4USER")
+    p4.client = os.getenv("P4CLIENT")
+    p4.exception_level = 1
+    p4.connect()
     
-    return {"xml_string": final_xml}
-
-def save_xml_node(state: GraphState, config: RunnableConfig) -> dict:
-    """Node 3: Takes the human-approved XML string and writes it to a sandboxed folder."""
-    if state.get("error"):
-        return state
-
-    table_data = state["table_data"]
-    approved_xml = state["xml_string"]
-    
-    # 1. Fetch the thread_id from the config to use as our sandbox folder name
-    thread_id = config.get("configurable", {}).get("thread_id", "default_user")
-    
-    # 2. Create the isolated workspace path (e.g., workspaces/MDR-123/)
-    workspace_dir = os.path.join(ROOT_DIR, "agent_workspaces", thread_id)
-    os.makedirs(workspace_dir, exist_ok=True)
-    
-    # 3. Save the file inside the sandbox
-    filename = os.path.join(workspace_dir, f"{table_data.name}.xml")
-    
-    print(f"[Node: Save] Human approved! Writing to disk at {filename}...")
-    with open(filename, "w") as f:
-        f.write(approved_xml)
+    try:
+        # Check if file exists in depot
+        try:
+            files_result = p4.run_files(depot_path)
+            is_update = len(files_result) > 0
+        except P4Exception:
+            is_update = False
+            
+        if is_update:
+            print(f"[Node: Builder] Table exists. Syncing and merging...")
+            p4.run_sync("-f", depot_path)
+            with open(local_path, "r", encoding="utf-8") as f:
+                existing_xml = f.read()
+            final_xml = merge_query_table_update(existing_xml, table_data)
+            action = "edit"
+        else:
+            print(f"[Node: Builder] New table. Rendering Jinja template...")
+            # Run your existing Jinja2 logic here
+            env = Environment(loader=FileSystemLoader(BASE_DIR), trim_blocks=True, lstrip_blocks=True)
+            template = env.get_template('table_template.xml')
+            final_xml = template.render(table=table_data)
+            action = "add"
+            
+        return {"xml_string": final_xml, "p4_action": action}
         
-    return {"xml_filename": filename}
+    except Exception as e:
+        return {"error": f"Perforce/Builder Error: {str(e)}"}
+    finally:
+        p4.disconnect()
+
+def perforce_deploy_node(state: GraphState, config: RunnableConfig) -> dict:
+    if state.get("error"): return state
+    
+    table_name = state["table_data"].name
+    local_path = os.path.join(ROOT_DIR, "QueryTable", "tempFolder", f"{table_name}.xml")
+    lock_path = os.path.join(ROOT_DIR, "querytable_deploy.lock")
+    
+    lock = FileLock(lock_path, timeout=60)
+    
+    with lock:
+        p4 = P4()
+        p4.port = os.getenv("P4PORT")
+        p4.user = os.getenv("P4USER")
+        p4.client = os.getenv("P4CLIENT")
+        p4.connect()
+        
+        try:
+            # 1. Prepare Perforce for the file change
+            if state["p4_action"] == "edit":
+                p4.run_edit(local_path) # Must run edit BEFORE writing so OS unlocks the file
+                
+            # 2. Write the human-approved XML to disk
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "w", encoding="utf-8") as f:
+                f.write(state["xml_string"])
+                
+            # 3. If adding, we add AFTER the file physically exists on disk
+            if state["p4_action"] == "add":
+                p4.run_add(local_path)
+                
+            # 4. Submit
+            commit_msg = f"Automated QueryTable update for {table_name}"
+            p4.run_submit("-d", commit_msg, local_path)
+            print(f"[Node: Deploy] SUCCESS! Submitted to Perforce.")
+            return {"xml_filename": local_path}
+            
+        except P4Exception as e:
+            p4.run_revert(local_path)
+            return {"error": f"Submit failed: {str(e)}"}
+        finally:
+            p4.disconnect()
 
 def validate_xml_node(state: GraphState) -> dict:
     """Node 2.5: Validates the in-memory XML string using xmllint."""
@@ -163,30 +214,30 @@ def route_after_validation(state: GraphState) -> str:
         return "validate_xml" 
     
     # If no error, proceed to save
-    return "save_xml"
+    return "perforce_deploy"
 
 # 4. Build and Compile the Graph Workflow
 workflow = StateGraph(GraphState)
 
 # Add our processing blocks
 workflow.add_node("extract_jira", extract_jira_node)
-workflow.add_node("render_xml", render_xml_node)
-workflow.add_node("save_xml", save_xml_node)
+workflow.add_node("perforce_builder", perforce_builder_node)
+workflow.add_node("perforce_deploy", perforce_deploy_node)
 workflow.add_node("validate_xml", validate_xml_node)
 
 # Set up the linear execution route
 workflow.add_edge(START, "extract_jira")
-workflow.add_edge("extract_jira", "render_xml")
-workflow.add_edge("render_xml", "validate_xml")
+workflow.add_edge("extract_jira", "perforce_builder")
+workflow.add_edge("perforce_builder", "validate_xml")
 workflow.add_conditional_edges(
     "validate_xml",             # The node we are coming from
     route_after_validation,     # The routing logic
     {
         "validate_xml": "validate_xml", # If router says 'validate_xml', loop back
-        "save_xml": "save_xml"          # If router says 'save_xml', move forward
+        "perforce_deploy": "perforce_deploy"          # If router says 'save_xml', move forward
     }
 )
-workflow.add_edge("save_xml", END)
+workflow.add_edge("perforce_deploy", END)
 
 # Compile into an executable application
 memory = MemorySaver()

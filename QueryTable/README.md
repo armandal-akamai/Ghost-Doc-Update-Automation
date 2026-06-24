@@ -7,9 +7,10 @@ This app is tasked with updating or creating new Query Tables. It has certain im
 - `app.py` : It is the gradio app to access the agent.
 - `pyd.py` : This file contains the pydantic data structure that the agent fills up.
              This is done to prevent the agent from hallucinating and force it to give the output in a desired structured format.
+- `table_template.xml`: The Jinja2 template used to generate XML files from scratch for brand new tables.
 
 - `table_template.xml` : This file contains a Jinja template. After the agent fills up the pydantic data structure; the data is used to create the actual xml file from this template.
-
+- `xmlMerger.py`: The specialized ElementTree parsing engine that surgically inserts or patches columns, descriptions, and historical queries into existing XML trees without escaping HTML tags.
 
 ## Agent Architecture
 

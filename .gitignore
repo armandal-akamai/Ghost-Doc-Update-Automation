@@ -1,6 +1,7 @@
 venv/
 agent_workspaces/
 QueryTable/__pycache__/
+QueryTable/tempFolder/
 LogFormat/__pycache__/
 log-format-updated.xml
 log-format.dtd
