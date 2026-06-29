@@ -15,7 +15,7 @@ from QueryTable.app import ui as query_table_ui
 unified_app = gr.TabbedInterface(
     interface_list=[log_format_ui, query_table_ui],
     tab_names=["Log-Format Updation", "Query Table Updation"],
-    title="LogFormat and QueryTable Updater"
+    title="Ghost Documentation Update Agent"
 )
 
 if __name__ == "__main__":

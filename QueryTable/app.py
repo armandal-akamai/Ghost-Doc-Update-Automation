@@ -103,7 +103,7 @@ def approve_and_save(ticket_id: str, edited_xml: str):
             )
         else:
             # Success!
-            success_msg = f"✅ Success! XML passed validation and was saved to disk"
+            success_msg = f"✅ Success! XML passed validation and was pushed to perforce"
             yield (
                 gr.update(value="Status: 🟢 Saved Successfully"),
                 gr.update(visible=False),  

@@ -28,6 +28,8 @@ State Management & Concurrency:
 """
 
 from typing import TypedDict, List, Optional
+from filelock import FileLock
+from P4 import P4, P4Exception
 import yaml
 from langgraph.graph import StateGraph, START, END
 from langchain_core.prompts import ChatPromptTemplate
@@ -176,18 +178,13 @@ def create_sandbox_config(ticket_id: str) -> dict:
     
     # Create the folder if it doesn't exist
     os.makedirs(ticket_workspace, exist_ok=True)
-    
-    shutil.copy(os.path.join(BASE_DIR, "log-format.xml"), os.path.join(ticket_workspace, "log-format.xml"))
-    shutil.copy(os.path.join(BASE_DIR, "schema_map.json"), os.path.join(ticket_workspace, "schema_map.json"))
 
     # Return the strict, dynamic paths for LangGraph
     return {
         "configurable": {
-            "thread_id": f"jira_session_{ticket_id}",
+            "thread_id": f"{ticket_id}",
             "yaml_file": os.path.join(ticket_workspace, "approved_input.yaml"),
-            "schema_file": os.path.join(ticket_workspace, "schema_map.json"),
-            "master_file": os.path.join(ticket_workspace, "log-format.xml"),
-            "output_file": os.path.join(ticket_workspace, "log-format-updated.xml")
+            "schema_file": os.path.join(BASE_DIR, "schema_map.json"),
         }
     }
 
@@ -209,15 +206,15 @@ def deployment_node(state: AgentState, config: RunnableConfig) -> dict:
     paths = config.get("configurable", {})
     yaml_file = paths.get("yaml_file")
     schema_file = paths.get("schema_file")
-    master_file = paths.get("master_file")
-    output_file = paths.get("output_file")
+    master_file = os.path.join(BASE_DIR, "log-format.xml") 
+    ticket_id = paths.get("thread_id", "Unknown_Ticket")
     
     # 2. FAIL-FAST RULE: If any path is missing, instantly kill the process to prevent collisions
-    if not all([yaml_file, schema_file, master_file, output_file]):
+    if not all([yaml_file, schema_file, master_file]):
         raise ValueError(
             "CRITICAL ERROR: Missing explicit sandbox file paths in configuration. "
             "To prevent multi-user collisions, the web application must provide unique, "
-            "isolated paths for yaml_file, schema_file, master_file, and output_file."
+            "isolated paths for yaml_file, schema_file, master_file."
         )
     
     # 3. Ensure the sandboxed directory actually exists before trying to write to it
@@ -229,18 +226,64 @@ def deployment_node(state: AgentState, config: RunnableConfig) -> dict:
     with open(yaml_file, "w", encoding="utf-8") as f:
         f.write(state["yaml_string"])
         
-    print(f"\n[SYSTEM] Kicking off deploy_to_master pipeline...")
-    
-    # 5. Hand off entirely to your existing deploy script!
-    deploy_to_master(
-        yaml_file=yaml_file,
-        schema_file=schema_file,
-        master_file=master_file,
-        output_file=output_file
-    )
-    
-    return {"deployment_status": "SUCCESS: Master deployment script completed."}
-# GRAPH ASSEMBLY & COMPILATION
+    print(f"\n[SYSTEM] Kicking off Perforce deployment")
+    target_xml_path = os.path.join(BASE_DIR, "log-format.xml")
+    lock_path = os.path.join(BASE_DIR, "perforce_deploy.lock")
+
+    lock = FileLock(lock_path, timeout=60)
+
+    try:
+        # 4. THE QUEUE: Process waits here until the lock is available
+        with lock:
+            print(f"[SYSTEM] Lock acquired. Connecting to Perforce...")
+            p4 = P4()
+            p4.port = os.getenv("P4PORT")
+            p4.user = os.getenv("P4USER")
+            p4.client = os.getenv("P4CLIENT")
+            p4.exception_level = 1
+            
+            p4.connect()
+            
+            try:
+                # Step A: Get the absolute latest file from the server
+                p4.run_sync("-f", target_xml_path)
+                
+                # Step B: Lock it for editing in our workspace
+                p4.run_edit(target_xml_path)
+                
+                # Step C: Execute surgical injection directly on the master file
+                deploy_to_master(
+                    yaml_file=yaml_file,
+                    schema_file=schema_file,
+                    master_file=target_xml_path,
+                    output_file=target_xml_path
+                )
+                
+                # Step D: Auto-Submit the changes
+                commit_msg = f"Automated log-format.xml update for {ticket_id}"
+                p4.run_submit("-d", commit_msg, target_xml_path)
+                
+                return {"deployment_status": f"SUCCESS: Perforce update deployed for {ticket_id}."}
+
+            except P4Exception as p4e:
+                # FAIL-SAFE: If Perforce throws an error, revert the file
+                print(f"[ERROR] Perforce transaction failed: {p4e}. Reverting...")
+                p4.run_revert(target_xml_path)
+                raise ValueError(f"Perforce Error: {p4e}")
+                
+            except Exception as e:
+                # FAIL-SAFE: If deploy_to_master crashes, revert the file
+                print(f"[ERROR] Deployment script failed: {e}. Reverting...")
+                p4.run_revert(target_xml_path)
+                raise ValueError(f"Deployment Engine Error: {e}")
+                
+            finally:
+                # Always close the connection to prevent memory/socket leaks
+                p4.disconnect()
+
+    except TimeoutError:
+        raise ValueError("Deployment Timeout: The queue is too busy. Please try again in a few minutes.")
+    # GRAPH ASSEMBLY & COMPILATION
 
 memory = MemorySaver()
 workflow = StateGraph(AgentState)

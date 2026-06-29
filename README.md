@@ -11,9 +11,19 @@ the project root.
 
 `GITHUB_TOKEN`
 
+#### Perforce Configuration:
+
+`P4PORT="rsh:ssh -2 -q -a -l p4ssh p4p.bangalore.corp.akamai.com"`
+
+`P4USER=your_ldap`
+
+`P4CLIENT=your_perforce_workspace_name`
+
 #### System Binaries: 
 
-Requires `xmllint` to be installed on the local host machine 
+* **xmllint**: Requires `xmllint` to be installed on the local host machine 
+
+* **ssh-agent**: Because Perforce connects via SSH tunneling, you must have an active `ssh-agent` running with your Akamai SSH keys added (`ssh-add`) before launching the Gradio server.
 
 ## Run Locally
 
@@ -42,11 +52,11 @@ Install dependencies
   python3 -m pip install -r requirements.txt
 ```
 
-Download the log-format.xml file
-
+Unlock your SSH Agent for Perforce Access : 
 ```bash
-    curl -fsSL https://lp.engr.akamai.com/log-format.xml --output LogFormat/log-format.xml
+ssh-add
 ```
+
 Start the server
 
 ```bash
