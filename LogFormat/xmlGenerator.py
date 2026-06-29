@@ -194,6 +194,8 @@ class UniversalXMLGenerationEngine:
                 self._build_bitmask(sf_node, item)
                 self._build_sub_chars(sf_node, item)
 
+                if "status_chars" in item:
+                    self.process_status_chars(sf_node, item["status_chars"])
                 if "sub_fields" in item:
                     self.process_sub_fields(sf_node, item["sub_fields"])
                 if "named_sub_fields" in item:
